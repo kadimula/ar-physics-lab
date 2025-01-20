@@ -7,11 +7,6 @@ export class UIController {
         this.experimentTitle = document.getElementById('experiment-title');
         this.instructionPanel = document.getElementById('instruction-panel');
         this.landingPage = document.getElementById('landing-page');
-
-        this.startButton.addEventListener('click', () => {
-            this.hideLandingPage();
-            this.createARScene();
-        });
     }
 
     async showLoadingScreen() {
@@ -35,15 +30,10 @@ export class UIController {
     createARScene() {
         const scene = document.createElement('a-scene');
         scene.setAttribute('embedded', '');
-        scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false;');
-        
-        const marker = document.createElement('a-marker');
-        marker.setAttribute('preset', 'hiro');
         
         const camera = document.createElement('a-entity');
         camera.setAttribute('camera', '');
 
-        scene.appendChild(marker);
         scene.appendChild(camera);
 
         document.body.appendChild(scene);
