@@ -79,11 +79,14 @@ class PhysicsLab {
                 // Process frame with AlvaAR
                 const pose = this.alvaAR.findCameraPose(frame);
                 if (pose) {
-                    this.sceneManager.updateFromPose(pose);
+                    // Add smoothing to the pose updates
+                    requestAnimationFrame(() => {
+                        this.sceneManager.updateFromPose(pose);
+                    });
                 }
             }
             return true;
-        }, 30);
+        }, 60); // Increased frame rate for smoother updates
 
         // Handle window resize
         window.addEventListener('resize', () => {

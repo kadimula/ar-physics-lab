@@ -6,8 +6,9 @@ export class SceneManager {
         // Create scene
         this.scene = new THREE.Scene();
         
-        // Create camera
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // Create camera with better AR settings
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
+        this.camera.position.set(0, 0, 0); // Camera at origin
         
         // Create renderer
         this.renderer = new THREE.WebGLRenderer({ 
@@ -19,14 +20,14 @@ export class SceneManager {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         
         // Setup lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Increased intensity
         this.scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(0, 10, 0);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(1, 1, 1);
         this.scene.add(directionalLight);
 
-        // Initialize the cube
+        // Initialize the cube with larger size
         this.cube = this.createCube();
         this.scene.add(this.cube);
 
@@ -40,11 +41,13 @@ export class SceneManager {
     }
 
     createCube() {
-        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+        // Make the cube larger and more visible
+        const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
         const material = new THREE.MeshPhongMaterial({ 
             color: 0x00ff00,
             transparent: true,
-            opacity: 0.8
+            opacity: 0.9,
+            shininess: 60
         });
         return new THREE.Mesh(geometry, material);
     }
@@ -59,9 +62,16 @@ export class SceneManager {
         // Apply the pose to the cube using AlvaAR's connector
         this.applyPose(pose, rotation, position);
         
+        // Add a slight offset to move the cube in front of the camera
+        position.z -= 0.5; // Move cube 0.5 units away from camera
+        position.y -= 0.2; // Move cube slightly down for better visibility
+
         // Update cube position and rotation
         this.cube.position.copy(position);
         this.cube.quaternion.copy(rotation);
+        
+        // Optional: Add some rotation animation
+        this.cube.rotation.y += 0.01;
     }
 
     animate = () => {
