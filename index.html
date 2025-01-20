@@ -4,37 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual Physics Lab</title>
-  <script type="module" crossorigin src="/ar-physics-lab/assets/index-B-0a8d3u.js"></script>
-  <link rel="stylesheet" crossorigin href="/ar-physics-lab/assets/index-DlDdnMUo.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script type="module" crossorigin src="./assets/index-DlrGG5ej.js"></script>
 </head>
-<body>
+<body style="margin: 0; overflow: hidden;">
+    <!-- AR.js scene -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+        <a-marker preset="hiro">
+            <!-- 3D content will be added here -->
+        </a-marker>
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <!-- UI Overlay -->
     <div id="app">
-        <!-- Loading Screen -->
         <div id="loading-screen">
             <div class="atom-loader"></div>
             <h1>Virtual Physics Lab</h1>
             <button id="start-button" class="hidden">Start</button>
         </div>
 
-        <!-- AR Experience -->
         <div id="ar-experience" class="hidden">
             <h2 id="experiment-title">The First Law</h2>
             <div id="instruction-panel"></div>
         </div>
 
-        <!-- Fallback 2D Experience -->
         <div id="fallback-experience" class="hidden">
-            
-            <div class="fallback-message">
-                <h2>Welcome to Virtual Physics Lab!</h2>
-                <p>Unfortunately, your device does not support Augmented Reality. Please use a supported device ex:</p>
-                <ul>
-                    <li>iPhone (iPhone 6s and later)</li>
-                    <li>iPad (iPad Pro or iPad 2017 and later)</li>
-                    <li>Android phones with ARCore support (Android 7.0+)</li>
-                    <li>Android tablets with ARCore support</li>
-                </ul>
-            </div>
+            <!-- Will be implemented for non-AR devices -->
         </div>
     </div>
 
