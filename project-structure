@@ -1,0 +1,15 @@
+physics-lab/
+├── src/
+│   ├── index.html
+│   ├── styles/
+│   │   └── main.css
+│   ├── ar-handler.js
+│   ├── scene-manager.js
+│   ├── ui-controller.js
+│   ├── main.js
+│   └── assets/
+│       ├── models/
+│       └── textures/
+├── vite.config.js
+├── package.json
+└── README.md 
