@@ -45,32 +45,58 @@ class PhysicsLab {
     }
 
     async startDemo(media, $container, $view, $canvas) {
+        // Set canvas size to match container
+        $canvas.width = $container.clientWidth;
+        $canvas.height = $container.clientHeight;
+        
         const size = resize2cover($canvas, media.width, media.height);
         const ctx = $canvas.getContext('2d', { alpha: false, desynchronized: true });
         
         this.alvaAR = await AlvaAR.Initialize($canvas.width, $canvas.height);
         
-        $container.appendChild($canvas);
-        $container.appendChild($view);
+        // Add both canvases to the container
+        $container.appendChild($canvas); // Video canvas
+        $container.appendChild(this.sceneManager.getCanvas()); // THREE.js canvas
+        
+        // Style the THREE.js canvas
+        const threeCanvas = this.sceneManager.getCanvas();
+        threeCanvas.style.position = 'absolute';
+        threeCanvas.style.top = '0';
+        threeCanvas.style.left = '0';
+        threeCanvas.style.width = '100%';
+        threeCanvas.style.height = '100%';
+        threeCanvas.style.pointerEvents = 'none';
 
         onFrame(() => {
             ctx.clearRect(0, 0, $canvas.width, $canvas.height);
 
             if (!document['hidden']) {
                 // Draw video frame to canvas
-                ctx.drawImage(media.el, 0, 0, media.width, media.height, size.x, size.y, size.width, size.height);
+                ctx.drawImage(media.el, 0, 0, media.width, media.height, 
+                             size.x, size.y, size.width, size.height);
                 const frame = ctx.getImageData(0, 0, $canvas.width, $canvas.height);
 
                 // Process frame with AlvaAR
                 const pose = this.alvaAR.findCameraPose(frame);
                 if (pose) {
-                    console.log('Camera Pose:', pose);
-                    // Update 3D scene with pose
                     this.sceneManager.updateFromPose(pose);
                 }
             }
             return true;
         }, 30);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            $canvas.width = $container.clientWidth;
+            $canvas.height = $container.clientHeight;
+            const newSize = resize2cover($canvas, media.width, media.height);
+            Object.assign(size, newSize);
+            
+            // Update THREE.js canvas size
+            this.sceneManager.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.sceneManager.camera.aspect = window.innerWidth / window.innerHeight;
+            this.sceneManager.camera.updateProjectionMatrix();
+        });
     }
 }
 
