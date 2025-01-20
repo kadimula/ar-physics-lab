@@ -1,6 +1,8 @@
-export default {
+import { defineConfig } from 'vite';
+
+export default defineConfig({
     root: 'src',
-    base: './',
+    base: '/ar-physics-lab/',
     server: {
         port: 3000
     },
@@ -8,4 +10,4 @@ export default {
         outDir: '../dist',
         emptyOutDir: true
     }
-} 
+}); 

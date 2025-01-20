@@ -20,12 +20,15 @@ jobs:
         with:
           node-version: '18'
 
-      # If you have any build steps, they would go here
-      # For now, we'll just deploy the static files
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: src  # Your source directory
+          folder: dist  # Deploy the built files
           branch: gh-pages  # The branch to deploy to
           clean: true  # Automatically remove deleted files from the deployment branch 
