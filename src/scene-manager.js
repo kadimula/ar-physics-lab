@@ -34,6 +34,12 @@ export class SceneManager {
         // Initialize AlvaAR connector
         this.applyPose = AlvaARConnectorTHREE.Initialize(THREE);
 
+        // Add pose smoothing variables
+        this.lastPosition = new THREE.Vector3();
+        this.lastRotation = new THREE.Quaternion();
+        this.smoothingFactor = 0.1; // Lower = smoother but more latency
+        this.isFirstPose = true;
+
         // Start render loop
         this.animate();
 
@@ -41,7 +47,6 @@ export class SceneManager {
     }
 
     createCube() {
-        // Make the cube larger and more visible
         const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
         const material = new THREE.MeshPhongMaterial({ 
             color: 0x00ff00,
@@ -49,29 +54,40 @@ export class SceneManager {
             opacity: 0.9,
             shininess: 60
         });
-        return new THREE.Mesh(geometry, material);
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(0, 0, -1); // Set initial position in front of camera
+        return cube;
     }
 
     updateFromPose(pose) {
         if (!pose) return;
 
-        // Create rotation quaternion and position vector
         const rotation = new THREE.Quaternion();
         const position = new THREE.Vector3();
 
-        // Apply the pose to the cube using AlvaAR's connector
+        // Apply the pose to get new position/rotation
         this.applyPose(pose, rotation, position);
-        
-        // Add a slight offset to move the cube in front of the camera
-        position.z -= 0.5; // Move cube 0.5 units away from camera
-        position.y -= 0.2; // Move cube slightly down for better visibility
 
-        // Update cube position and rotation
-        this.cube.position.copy(position);
-        this.cube.quaternion.copy(rotation);
-        
-        // Optional: Add some rotation animation
-        this.cube.rotation.y += 0.01;
+        if (this.isFirstPose) {
+            // On first pose, set position directly
+            this.cube.position.copy(position);
+            this.cube.quaternion.copy(rotation);
+            this.lastPosition.copy(position);
+            this.lastRotation.copy(rotation);
+            this.isFirstPose = false;
+            return;
+        }
+
+        // Smooth position
+        this.cube.position.lerp(position, this.smoothingFactor);
+        this.cube.quaternion.slerp(rotation, this.smoothingFactor);
+
+        // Update last known good values
+        this.lastPosition.copy(this.cube.position);
+        this.lastRotation.copy(this.cube.quaternion);
+
+        // Optional: Add very subtle rotation animation
+        this.cube.rotation.y += 0.001;
     }
 
     animate = () => {

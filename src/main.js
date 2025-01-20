@@ -67,6 +67,9 @@ class PhysicsLab {
         threeCanvas.style.height = '100%';
         threeCanvas.style.pointerEvents = 'none';
 
+        let lastPoseTime = 0;
+        const MIN_POSE_INTERVAL = 1000 / 30; // Max 30 pose updates per second
+
         onFrame(() => {
             ctx.clearRect(0, 0, $canvas.width, $canvas.height);
 
@@ -76,17 +79,20 @@ class PhysicsLab {
                              size.x, size.y, size.width, size.height);
                 const frame = ctx.getImageData(0, 0, $canvas.width, $canvas.height);
 
-                // Process frame with AlvaAR
-                const pose = this.alvaAR.findCameraPose(frame);
-                if (pose) {
-                    // Add smoothing to the pose updates
-                    requestAnimationFrame(() => {
-                        this.sceneManager.updateFromPose(pose);
-                    });
+                const now = performance.now();
+                if (now - lastPoseTime >= MIN_POSE_INTERVAL) {
+                    // Process frame with AlvaAR
+                    const pose = this.alvaAR.findCameraPose(frame);
+                    if (pose) {
+                        requestAnimationFrame(() => {
+                            this.sceneManager.updateFromPose(pose);
+                        });
+                        lastPoseTime = now;
+                    }
                 }
             }
             return true;
-        }, 60); // Increased frame rate for smoother updates
+        }, 60);
 
         // Handle window resize
         window.addEventListener('resize', () => {
