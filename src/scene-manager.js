@@ -8,7 +8,6 @@ export class SceneManager {
         
         // Create camera with better AR settings
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-        this.camera.position.set(0, 0, 0); // Camera at origin
         
         // Create renderer
         this.renderer = new THREE.WebGLRenderer({ 
@@ -20,25 +19,25 @@ export class SceneManager {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         
         // Setup lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Increased intensity
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         this.scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
         directionalLight.position.set(1, 1, 1);
         this.scene.add(directionalLight);
 
-        // Initialize the cube with larger size
+        // Initialize the cube at a fixed position in world space
         this.cube = this.createCube();
+        this.cube.position.set(0, 0, -1); // Fixed position in front of initial camera position
         this.scene.add(this.cube);
 
         // Initialize AlvaAR connector
         this.applyPose = AlvaARConnectorTHREE.Initialize(THREE);
 
-        // Add pose smoothing variables
-        this.lastPosition = new THREE.Vector3();
-        this.lastRotation = new THREE.Quaternion();
-        this.smoothingFactor = 0.1; // Lower = smoother but more latency
-        this.isFirstPose = true;
+        // Add camera transform group to handle pose updates
+        this.cameraGroup = new THREE.Group();
+        this.cameraGroup.add(this.camera);
+        this.scene.add(this.cameraGroup);
 
         // Start render loop
         this.animate();
@@ -54,40 +53,26 @@ export class SceneManager {
             opacity: 0.9,
             shininess: 60
         });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 0, -1); // Set initial position in front of camera
-        return cube;
+        return new THREE.Mesh(geometry, material);
     }
 
     updateFromPose(pose) {
         if (!pose) return;
 
+        // Create rotation quaternion and position vector for camera
         const rotation = new THREE.Quaternion();
         const position = new THREE.Vector3();
 
-        // Apply the pose to get new position/rotation
+        // Apply the pose to get camera position/rotation
         this.applyPose(pose, rotation, position);
 
-        if (this.isFirstPose) {
-            // On first pose, set position directly
-            this.cube.position.copy(position);
-            this.cube.quaternion.copy(rotation);
-            this.lastPosition.copy(position);
-            this.lastRotation.copy(rotation);
-            this.isFirstPose = false;
-            return;
-        }
-
-        // Smooth position
-        this.cube.position.lerp(position, this.smoothingFactor);
-        this.cube.quaternion.slerp(rotation, this.smoothingFactor);
-
-        // Update last known good values
-        this.lastPosition.copy(this.cube.position);
-        this.lastRotation.copy(this.cube.quaternion);
-
-        // Optional: Add very subtle rotation animation
-        this.cube.rotation.y += 0.001;
+        // Update camera group transform (inverse of the pose)
+        this.cameraGroup.position.copy(position);
+        this.cameraGroup.quaternion.copy(rotation);
+        
+        // Invert the camera group's transform
+        this.cameraGroup.position.multiplyScalar(-1);
+        this.cameraGroup.quaternion.invert();
     }
 
     animate = () => {
