@@ -1,31 +1,40 @@
 import * as THREE from 'three';
-import { ARjs } from 'ar.js';
 
 export class ARHandler {
     constructor(sceneManager) {
         this.sceneManager = sceneManager;
-        this.markerRoot = new THREE.Group();
+        this.xrSession = null;
+        this.hitTestSource = null;
     }
 
-    startARSession() {
-        const scene = this.sceneManager.scene;
-        const camera = this.sceneManager.camera;
+    async startARSession() {
+        if (!navigator.xr) {
+            console.error('ARHandler: WebXR not supported');
+            throw new Error('WebXR not supported');
+        }
 
-        // Create a marker-based AR scene
-        const markerControls = new ARjs.MarkerControls(camera, this.markerRoot, {
-            type: 'pattern',
-            patternUrl: 'path/to/your/pattern-marker.patt', // Replace with your marker pattern file
+        console.log('ARHandler: Requesting AR session...');
+        try {
+            const session = await navigator.xr.requestSession('immersive-ar', {
+                requiredFeatures: ['hit-test', 'local-floor']
+            });
+            console.log('ARHandler: AR session started successfully');
+
+            this.xrSession = session;
+            await this.sceneManager.initAR(session);
+            
+            this.setupHitTesting();
+        } catch (error) {
+            console.error('ARHandler: Failed to start AR session:', error);
+            throw error;
+        }
+    }
+
+    async setupHitTesting() {
+        const referenceSpace = await this.xrSession.requestReferenceSpace('local-floor');
+        const viewerSpace = await this.xrSession.requestReferenceSpace('viewer');
+        this.hitTestSource = await this.xrSession.requestHitTestSource({
+            space: viewerSpace
         });
-
-        scene.add(this.markerRoot);
-        this.setupMarkerContent();
-    }
-
-    setupMarkerContent() {
-        // Create a 3D object to display when the marker is detected
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshNormalMaterial();
-        const cube = new THREE.Mesh(geometry, material);
-        this.markerRoot.add(cube);
     }
 } 

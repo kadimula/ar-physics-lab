@@ -41,4 +41,10 @@ export class SceneManager {
     render() {
         this.renderer.render(this.scene, this.camera);
     }
+
+    async initAR(session) {
+        this.renderer.xr.enabled = true;
+        this.renderer.xr.setReferenceSpaceType('local-floor');
+        await this.renderer.xr.setSession(session);
+    }
 } 
