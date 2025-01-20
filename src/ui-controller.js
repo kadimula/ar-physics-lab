@@ -6,6 +6,12 @@ export class UIController {
         this.fallbackExperience = document.getElementById('fallback-experience');
         this.experimentTitle = document.getElementById('experiment-title');
         this.instructionPanel = document.getElementById('instruction-panel');
+        this.landingPage = document.getElementById('landing-page');
+
+        this.startButton.addEventListener('click', () => {
+            this.hideLandingPage();
+            this.createARScene();
+        });
     }
 
     async showLoadingScreen() {
@@ -20,6 +26,32 @@ export class UIController {
 
     showStartButton() {
         this.startButton.classList.remove('hidden');
+    }
+
+    hideLandingPage() {
+        this.landingPage.style.display = 'none';
+    }
+
+    createARScene() {
+        const scene = document.createElement('a-scene');
+        scene.setAttribute('embedded', '');
+        scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false;');
+        
+        const marker = document.createElement('a-marker');
+        marker.setAttribute('preset', 'hiro');
+        
+        const camera = document.createElement('a-entity');
+        camera.setAttribute('camera', '');
+
+        scene.appendChild(marker);
+        scene.appendChild(camera);
+
+        document.body.appendChild(scene);
+    }
+
+    showARScene() {
+        const aframeScene = document.querySelector('a-scene');
+        aframeScene.style.display = 'block';
     }
 
     showARExperience() {

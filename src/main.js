@@ -20,6 +20,7 @@ class PhysicsLab {
     initARExperience() {
         this.ui.showStartButton();
         document.getElementById('start-button').addEventListener('click', async () => {
+            console.log('Start button clicked');
             try {
                 await this.arHandler.startARSession();
                 this.ui.hideLoadingScreen();
