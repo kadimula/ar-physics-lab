@@ -3,38 +3,48 @@ import * as THREE from 'three';
 export class ARHandler {
     constructor(sceneManager) {
         this.sceneManager = sceneManager;
-        this.xrSession = null;
-        this.hitTestSource = null;
+        this.markerRoot = new THREE.Group();
+        this.isRunning = false;
     }
 
     async startARSession() {
-        if (!navigator.xr) {
-            console.error('ARHandler: WebXR not supported');
-            throw new Error('WebXR not supported');
-        }
-
-        console.log('ARHandler: Requesting AR session...');
         try {
-            const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['hit-test', 'local-floor']
-            });
-            console.log('ARHandler: AR session started successfully');
-
-            this.xrSession = session;
-            await this.sceneManager.initAR(session);
+            console.log('ARHandler: Starting AR session with AR.js');
             
-            this.setupHitTesting();
+            // Get the A-Frame scene and marker
+            const aframeScene = document.querySelector('a-scene');
+            const marker = document.querySelector('a-marker');
+            
+            // Add our Three.js scene to the marker
+            marker.object3D.add(this.markerRoot);
+            this.markerRoot.add(this.sceneManager.scene);
+
+            // Setup marker detection events
+            marker.addEventListener('markerFound', () => {
+                console.log('Marker Found');
+                this.isRunning = true;
+            });
+
+            marker.addEventListener('markerLost', () => {
+                console.log('Marker Lost');
+                this.isRunning = false;
+            });
+
+            // Add some test content
+            this.addTestContent();
+
         } catch (error) {
             console.error('ARHandler: Failed to start AR session:', error);
             throw error;
         }
     }
 
-    async setupHitTesting() {
-        const referenceSpace = await this.xrSession.requestReferenceSpace('local-floor');
-        const viewerSpace = await this.xrSession.requestReferenceSpace('viewer');
-        this.hitTestSource = await this.xrSession.requestHitTestSource({
-            space: viewerSpace
-        });
+    addTestContent() {
+        // Add a simple cube to test marker detection
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshNormalMaterial();
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(0, 0.5, 0); // Position slightly above the marker
+        this.markerRoot.add(cube);
     }
 } 

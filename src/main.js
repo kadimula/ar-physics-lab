@@ -19,15 +19,21 @@ class PhysicsLab {
 
     initARExperience() {
         this.ui.showStartButton();
-        document.getElementById('start-button').addEventListener('click', () => {
-            this.arHandler.startARSession();
-            this.ui.hideLoadingScreen();
-            this.ui.showARExperience();
+        document.getElementById('start-button').addEventListener('click', async () => {
+            try {
+                await this.arHandler.startARSession();
+                this.ui.hideLoadingScreen();
+                this.ui.showARExperience();
+                this.ui.updateInstructions('Point your camera at the Hiro marker');
+            } catch (error) {
+                console.error('Failed to start AR:', error);
+                this.ui.showFallbackExperience();
+            }
         });
     }
 }
 
-// Start the application
-window.addEventListener('load', () => {
+// Start the application when A-Frame is ready
+document.addEventListener('DOMContentLoaded', () => {
     new PhysicsLab();
 }); 
