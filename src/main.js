@@ -1,4 +1,4 @@
-import { SceneManager } from './scene-manager.js';
+import { ARCamView } from './view.js';
 import { UIController } from './ui-controller.js';
 import { AlvaAR } from './alva_ar.js';
 import { Camera, onFrame, resize2cover } from './utils.js';
@@ -7,7 +7,6 @@ class PhysicsLab {
     constructor() {
         console.log('PhysicsLab: Initializing...');
         this.ui = new UIController();
-        this.sceneManager = new SceneManager();
         this.init();
     }
 
@@ -15,8 +14,8 @@ class PhysicsLab {
         const config = {
             video: {
                 facingMode: 'environment',
-                aspectRatio: 16 / 9,
-                width: { ideal: 1280 }
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
             },
             audio: false
         };
@@ -36,7 +35,7 @@ class PhysicsLab {
             $overlay.remove();
             try {
                 const media = await Camera.Initialize(config);
-                await this.startDemo(media, $container, $view, $canvas);
+                await this.startDemo(media, $container, $canvas, $view);
             } catch (error) {
                 console.error('Camera error:', error);
                 this.ui.showFallbackExperience();
@@ -44,50 +43,61 @@ class PhysicsLab {
         });
     }
 
-    async startDemo(media, $container, $view, $canvas) {
-        // Set canvas size to match container
+    /**
+     * startDemo
+     * @param {*} media ; looks like { el: HTMLVideoElement, width: number, height: number }
+     * @param {*} $container 
+     * @param {*} $view 
+     * @param {*} $canvas 
+     */
+
+    async startDemo(media, $container, $canvas, $view) {
+        console.log("media");
+        console.log(media);
+        const $video = media.el;
+
         $canvas.width = $container.clientWidth;
         $canvas.height = $container.clientHeight;
         
-        const size = resize2cover($canvas, media.width, media.height);
+        const size = resize2cover( $video.videoWidth, $video.videoHeight, $container.clientWidth, $container.clientHeight );
+
+        $canvas.width = $container.clientWidth;
+        $canvas.height = $container.clientHeight;
+        $video.style.width = size.width + 'px';
+        $video.style.height = size.height + 'px';
+        
         const ctx = $canvas.getContext('2d', { alpha: false, desynchronized: true });
         
         this.alvaAR = await AlvaAR.Initialize($canvas.width, $canvas.height);
-        
-        // Add both canvases to the container
-        $container.appendChild($canvas); // Video canvas
-        $container.appendChild(this.sceneManager.getCanvas()); // THREE.js canvas
-        
-        // Style the THREE.js canvas
-        const threeCanvas = this.sceneManager.getCanvas();
-        threeCanvas.style.position = 'absolute';
-        threeCanvas.style.top = '0';
-        threeCanvas.style.left = '0';
-        threeCanvas.style.width = '100%';
-        threeCanvas.style.height = '100%';
-        threeCanvas.style.pointerEvents = 'none';
+        const view = new ARCamView( $view, $canvas.width, $canvas.height );
 
-        let lastPoseTime = 0;
-        const MIN_POSE_INTERVAL = 1000 / 30; // Max 30 pose updates per second
+        $container.appendChild( $canvas );
+        $container.appendChild( $view );
 
         onFrame(() => {
             ctx.clearRect(0, 0, $canvas.width, $canvas.height);
 
             if (!document['hidden']) {
-                // Draw video frame to canvas
-                ctx.drawImage(media.el, 0, 0, media.width, media.height, 
-                             size.x, size.y, size.width, size.height);
-                const frame = ctx.getImageData(0, 0, $canvas.width, $canvas.height);
 
-                const now = performance.now();
-                if (now - lastPoseTime >= MIN_POSE_INTERVAL) {
-                    // Process frame with AlvaAR
-                    const pose = this.alvaAR.findCameraPose(frame);
-                    if (pose) {
-                        requestAnimationFrame(() => {
-                            this.sceneManager.updateFromPose(pose);
-                        });
-                        lastPoseTime = now;
+                ctx.drawImage( $video, 0, 0, $video.videoWidth, $video.videoHeight, size.x, size.y, size.width, size.height );
+                const frame = ctx.getImageData( 0, 0, $canvas.width, $canvas.height );
+
+                const pose = this.alvaAR.findCameraPose( frame );
+
+                if( pose )
+                {
+                    view.updateCameraPose( pose );
+                }
+                else
+                {
+                    view.lostCamera();
+
+                    const dots = this.alvaAR.getFramePoints();
+
+                    for( const p of dots )
+                    {
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect( p.x, p.y, 2, 2 );
                     }
                 }
             }
